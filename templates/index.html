@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Pull</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 100px;
+        }
+        #pull-button {
+            background-color: green;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #pull-button:disabled {
+            background-color: grey;
+            cursor: not-allowed;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+        }
+        .failure {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <button id="pull-button" onclick="executePull()">Pull</button>
+    <div id="message" class="message"></div>
+
+    <script>
+        function executePull() {
+            const button = document.getElementById("pull-button");
+            const messageDiv = document.getElementById("message");
+
+            // Disable the button and show the spinner
+            button.disabled = true;
+            button.innerHTML = '<div class="spinner"></div> Executing...';
+
+            // Perform the POST request to the backend
+            fetch('/execute_pull', {
+                method: 'POST',
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Simulating success/failure based on backend response
+                const isSuccess = Math.random() > 0.5; // Simulated response
+                if (isSuccess) {
+                    button.innerHTML = 'Pull';
+                    messageDiv.innerHTML = 'Git Pull successful!';
+                    messageDiv.classList.remove('failure');
+                    messageDiv.classList.add('success');
+                } else {
+                    button.innerHTML = 'Pull';
+                    messageDiv.innerHTML = 'Something went wrong!';
+                    messageDiv.classList.remove('success');
+                    messageDiv.classList.add('failure');
+                }
+
+                // Enable button again after some time
+                button.disabled = false;
+
+                // Hide message after 5 seconds
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 5000);
+            })
+            .catch(error => {
+                // If something went wrong
+                button.innerHTML = 'Pull';
+                messageDiv.innerHTML = 'Something went wrong!';
+                messageDiv.classList.remove('success');
+                messageDiv.classList.add('failure');
+                button.disabled = false;
+                setTimeout(() => {
+                    messageDiv.innerHTML = '';
+                }, 5000);
+            });
+        }
+    </script>
+</body>
+</html>
