@@ -16,7 +16,7 @@ def execute_git_commands():
             os.chdir('/home/roadmapv2_LRM')  # For Linux-based systems
 
         # Execute git commands
-        subprocess.run(['git', 'restore', '.'], check=True)
+        # subprocess.run(['git', 'restore', '.'], check=True)
         subprocess.run(['git', 'pull'], check=True)
         # print("hello")
         return "success"
@@ -57,3 +57,4 @@ def execute_pull():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
