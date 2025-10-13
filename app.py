@@ -1,10 +1,52 @@
 import os
 import subprocess
 import threading
-from flask import Flask, render_template, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import platform
 
 app = Flask(__name__)
+
+# Define the folder where images will be stored
+UPLOAD_FOLDER = 'uploaded'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+# Make sure the uploaded folder exists
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# Route to handle image file uploads
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+    if 'file' not in request.files:
+        return jsonify({'status': 'failure', 'message': 'No file part'}), 400
+
+    file = request.files['file']
+
+    # If no file is selected
+    if file.filename == '':
+        return jsonify({'status': 'failure', 'message': 'No selected file'}), 400
+
+    # Ensure the file is an image (optional, you can skip or modify this part)
+    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+        return jsonify({'status': 'failure', 'message': 'Invalid file type'}), 400
+
+    # Save the file with the same name (overwrite if file exists)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+    file.save(file_path)
+
+    return jsonify({'status': 'success', 'message': f'File uploaded successfully: {file.filename}', 'file_path': file_path})
+
+
+# Route to view an uploaded file
+@app.route('/uploaded/<filename>', methods=['GET'])
+def uploaded_file(filename):
+    # Check if the file exists
+    if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    else:
+        return jsonify({'status': 'failure', 'message': 'File not found'}), 404
+
 
 # Function to execute git commands in the background
 def execute_git_commands():
