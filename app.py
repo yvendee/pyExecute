@@ -3,6 +3,10 @@ import subprocess
 import threading
 from flask import Flask, request, jsonify, send_from_directory, render_template
 import platform
+import string
+import random
+from datetime import datetime
+
 
 app = Flask(__name__)
 
@@ -46,6 +50,51 @@ def uploaded_file(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     else:
         return jsonify({'status': 'failure', 'message': 'File not found'}), 404
+
+
+
+@app.route('/upload-image-file', methods=['POST'])
+def upload_image_file():
+    if 'file' not in request.files:
+        return jsonify({'status': 'failure', 'message': 'No file part'}), 400
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'status': 'failure', 'message': 'No selected file'}), 400
+
+    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+        return jsonify({'status': 'failure', 'message': 'Invalid file type'}), 400
+
+    upload_folder = os.path.join(os.getcwd(), 'uploads')
+    os.makedirs(upload_folder, exist_ok=True)
+
+    random_letters = ''.join(random.choices(string.ascii_letters, k=10))
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    new_filename = f"{timestamp}_{random_letters}.jpg"
+    file_path = os.path.join(upload_folder, new_filename)
+
+    file.save(file_path)
+
+    return jsonify({
+        'status': 'success',
+        'message': 'File uploaded successfully',
+        'new_filename': new_filename
+    })
+
+
+@app.route('/view-file/<new_filename>', methods=['GET'])
+def view_file(new_filename):
+    upload_folder = os.path.join(os.getcwd(), 'uploads')
+    file_path = os.path.join(upload_folder, new_filename)
+
+    if not os.path.exists(file_path):
+        return jsonify({
+            'status': 'failure',
+            'message': f'File not found: {new_filename}'
+        }), 404
+
+    return send_from_directory(upload_folder, new_filename)
 
 
 # Function to execute git commands in the background
