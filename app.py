@@ -19,37 +19,91 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+# # Route to handle image file uploads
+# @app.route('/upload_image', methods=['POST'])
+# def upload_image():
+#     if 'file' not in request.files:
+#         return jsonify({'status': 'failure', 'message': 'No file part'}), 400
+
+#     file = request.files['file']
+
+#     # If no file is selected
+#     if file.filename == '':
+#         return jsonify({'status': 'failure', 'message': 'No selected file'}), 400
+
+#     # Ensure the file is an image (optional, you can skip or modify this part)
+#     if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+#         return jsonify({'status': 'failure', 'message': 'Invalid file type'}), 400
+
+#     # Save the file with the same name (overwrite if file exists)
+#     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+#     file.save(file_path)
+
+#     return jsonify({'status': 'success', 'message': f'File uploaded successfully: {file.filename}', 'file_path': file_path})
+
 # Route to handle image file uploads
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
-    if 'file' not in request.files:
-        return jsonify({'status': 'failure', 'message': 'No file part'}), 400
+    try:
+        if 'file' not in request.files:
+            return jsonify({'status': 'failure', 'message': 'No file part'}), 400
 
-    file = request.files['file']
+        file = request.files['file']
 
-    # If no file is selected
-    if file.filename == '':
-        return jsonify({'status': 'failure', 'message': 'No selected file'}), 400
+        # If no file is selected
+        if file.filename == '':
+            return jsonify({'status': 'failure', 'message': 'No selected file'}), 400
 
-    # Ensure the file is an image (optional, you can skip or modify this part)
-    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
-        return jsonify({'status': 'failure', 'message': 'Invalid file type'}), 400
+        # Ensure the file is an image (optional, you can skip or modify this part)
+        if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+            return jsonify({'status': 'failure', 'message': 'Invalid file type'}), 400
 
-    # Save the file with the same name (overwrite if file exists)
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-    file.save(file_path)
+        # Save the file with the same name (overwrite if file exists)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(file_path)
 
-    return jsonify({'status': 'success', 'message': f'File uploaded successfully: {file.filename}', 'file_path': file_path})
+        return jsonify({
+            'status': 'success',
+            'message': f'File uploaded successfully: {file.filename}',
+            'file_path': file_path
+        })
 
+    except FileNotFoundError:
+        return jsonify({'status': 'failure', 'message': 'Upload folder not found'}), 500
+    except PermissionError:
+        return jsonify({'status': 'failure', 'message': 'Permission denied while saving file'}), 500
+    except Exception as e:
+        # Catch-all for any other unexpected errors
+        return jsonify({'status': 'failure', 'message': f'An unexpected error occurred: {str(e)}'}), 500
+
+
+# # Route to view an uploaded file
+# @app.route('/uploaded/<filename>', methods=['GET'])
+# def uploaded_file(filename):
+#     # Check if the file exists
+#     if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+#         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+#     else:
+#         return jsonify({'status': 'failure', 'message': 'File not found'}), 404
 
 # Route to view an uploaded file
 @app.route('/uploaded/<filename>', methods=['GET'])
 def uploaded_file(filename):
-    # Check if the file exists
-    if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], filename)):
+    try:
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+        # Check if the file exists
+        if not os.path.exists(file_path):
+            return jsonify({'status': 'failure', 'message': 'File not found'}), 404
+
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    else:
-        return jsonify({'status': 'failure', 'message': 'File not found'}), 404
+
+    except PermissionError:
+        return jsonify({'status': 'failure', 'message': 'Permission denied while accessing file'}), 500
+    except FileNotFoundError:
+        return jsonify({'status': 'failure', 'message': 'Upload directory not found'}), 500
+    except Exception as e:
+        return jsonify({'status': 'failure', 'message': f'An unexpected error occurred: {str(e)}'}), 500
 
 
 
@@ -148,4 +202,5 @@ def execute_pull():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
